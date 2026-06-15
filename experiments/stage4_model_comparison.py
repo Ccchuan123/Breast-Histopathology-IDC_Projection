@@ -44,11 +44,6 @@ from src.visualization import (
 def load_stage2_model(device: torch.device) -> torch.nn.Module:
     """加载阶段二训练好的特征分类器。"""
     classifier = create_feature_classifier(feature_dim=FEATURE_DIM, num_classes=2)
-    if BEST_MODEL_STAGE2.exists():
-        classifier.load_state_dict(torch.load(BEST_MODEL_STAGE2, map_location=device))
-        print("  [OK] 阶段二模型已加载")
-    else:
-        print("  [WARN]  阶段二模型未找到，请先运行 stage2_resnet_frozen.py")
     classifier = classifier.to(device).eval()
     return classifier
 
@@ -56,11 +51,6 @@ def load_stage2_model(device: torch.device) -> torch.nn.Module:
 def load_stage3_model(device: torch.device) -> torch.nn.Module:
     """加载阶段三训练好的微调模型。"""
     model = create_resnet18_full(num_classes=2, freeze_backbone=False)
-    if BEST_MODEL_STAGE3.exists():
-        model.load_state_dict(torch.load(BEST_MODEL_STAGE3, map_location=device))
-        print("  [OK] 阶段三模型已加载")
-    else:
-        print("  [WARN]  阶段三模型未找到，请先运行 stage3_resnet_finetune.py")
     model = model.to(device).eval()
     return model
 
@@ -99,12 +89,8 @@ def ensemble_average(probabilities: list[np.ndarray]) -> np.ndarray:
 
 
 def main():
-    print("\n" + "=" * 60)
+    print("\n")
     print("  阶段四：模型对比与集成")
-    print("=" * 60)
-
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"  设备: {device}")
 
     # ---- 1. 准备测试数据 ----
     print("\n 加载数据...")
@@ -174,36 +160,30 @@ def main():
     print(" 模型集成实验")
     print("-" * 50)
 
-    if len(all_predictions) >= 2:
-        # 硬投票
-        ensemble_pred = ensemble_vote(all_predictions)
-        metrics_vote = compute_metrics(y_test_np, ensemble_pred)
-        print("\n 集成方法：硬投票 (Majority Voting)")
-        print(f"   参与模型: {', '.join(model_names)}")
-        print_metrics(metrics_vote, "Ensemble (Hard Voting)")
+    ensemble_pred = ensemble_vote(all_predictions)
+    metrics_vote = compute_metrics(y_test_np, ensemble_pred)
+    print("\n 集成方法：硬投票 (Majority Voting)")
+    print(f"   参与模型: {', '.join(model_names)}")
+    print_metrics(metrics_vote, "Ensemble (Hard Voting)")
 
-        # 软投票（概率平均）
-        ensemble_pred_soft, ensemble_prob = ensemble_average(all_probabilities)
-        metrics_soft = compute_metrics(y_test_np, ensemble_pred_soft, ensemble_prob)
-        print("\n 集成方法：软投票 (Probability Averaging)")
-        print(f"   参与模型: {', '.join(model_names)}")
-        print_metrics(metrics_soft, "Ensemble (Soft Voting)")
+    # 软投票（概率平均）
+    ensemble_pred_soft, ensemble_prob = ensemble_average(all_probabilities)
+    metrics_soft = compute_metrics(y_test_np, ensemble_pred_soft, ensemble_prob)
+    print("\n 集成方法：软投票 (Probability Averaging)")
+    print(f"   参与模型: {', '.join(model_names)}")
+    print_metrics(metrics_soft, "Ensemble (Soft Voting)")
 
-        # 保存集成结果
-        from src.train_utils import save_model_results
-        save_model_results("Ensemble Hard Voting", metrics_vote)
-        save_model_results("Ensemble Soft Voting", metrics_soft)
-    else:
-        print("[WARN]  可用模型不足 2 个，跳过集成实验。")
-        print("   请先运行阶段一、二、三中的至少两个。")
+    # 保存集成结果
+    from src.train_utils import save_model_results
+    save_model_results("Ensemble Hard Voting", metrics_vote)
+    save_model_results("Ensemble Soft Voting", metrics_soft)
 
     # ---- 4. 模型对比可视化 ----
     print("\n 生成模型对比图...")
     if RESULTS_CSV.exists():
         results_df = pd.read_csv(RESULTS_CSV)
-        print("\n" + "=" * 60)
+        print("\n")
         print("  所有模型结果汇总")
-        print("=" * 60)
         print(results_df.to_string(index=False))
 
         if len(results_df) >= 2:
@@ -215,9 +195,8 @@ def main():
               f"(AUC={best_model['auc']:.4f}, F1={best_model['f1_score']:.4f})")
 
     # ---- 5. 最终总结 ----
-    print("\n" + "=" * 60)
-    print("   全部实验完成！")
-    print("=" * 60)
+    print("\n")
+    print("  全部实验完成")
     print("")
     print("项目四个阶段概览：")
     print("  阶段一：传统 ML (LR/RF/XGBoost) -- 建立基线")
@@ -229,7 +208,6 @@ def main():
     print(f"  模型对比: {RESULTS_CSV}")
     print(f"  对比图表: {FIGURE_DIR / 'model_comparison.png'}")
     print(f"  各模型图表: {FIGURE_DIR}/")
-    print("=" * 60)
 
 
 if __name__ == "__main__":
