@@ -51,17 +51,9 @@ from src.visualization import (
 
 
 def main():
-    print("\n" + "=" * 60)
+    print("\n")
     print("  阶段三：ResNet18 微调 (Fine-tuning)")
-    print("=" * 60)
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    if device.type == "cpu":
-        print("[WARN]  当前使用 CPU 训练，全模型微调可能需要较长时间。")
-        print("   建议：耐心等待，或减少 epoch 数。")
-    print(f"  设备: {device}")
-
-    # ---- 1. 数据准备 ----
     print("\n 加载并划分数据...")
     df = patient_level_split(collect_samples(
         Path(__file__).resolve().parent.parent / "data" / "IDC_regular_ps50_idx5"
@@ -86,7 +78,7 @@ def main():
 
     total, trainable = count_parameters(model)
     print(f"  总参数量:    {total:,}")
-    print(f"  可训练参数:  {trainable:,} (全部可训练)")
+    print(f"  可训练参数:  {trainable:,} ")
 
     # 类别权重
     train_labels = train_df["label"].tolist()
@@ -164,15 +156,12 @@ def main():
     plot_roc_curve(y_true, y_prob, model_name="ResNet18 Finetune")
 
     # ---- 5. 小结 ----
-    print("\n" + "=" * 60)
-    print("  阶段三完成！")
-    print("=" * 60)
+    print("\n")
+    print(" 阶段三完成")
     print("ResNet18 微调完成。现在对比阶段一和阶段二的结果：")
-    print("  - 阶段一 (传统ML):  建立基线")
-    print("  - 阶段二 (冻结骨干): 快速训练，只更新 FC 层")
-    print("  - 阶段三 (微调):     端到端训练，充分释放模型潜力")
-    print("接下来在阶段四，我们将系统比较所有模型的表现。")
-    print("=" * 60)
+    print("  阶段一 (传统ML):   建立基线")
+    print("  阶段二 (冻结骨干): 快速训练，只更新 FC 层")
+    print("  阶段三 (微调):     端到端训练，充分释放模型潜力")
 
 
 if __name__ == "__main__":
