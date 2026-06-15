@@ -51,5 +51,4 @@ echo ALL DONE!
 echo Models:   outputs\models\
 echo Figures:  outputs\figures\
 echo Results:  outputs\all_model_results.csv
-echo ========================================
 pause
