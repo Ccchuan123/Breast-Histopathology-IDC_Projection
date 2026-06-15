@@ -1,0 +1,16 @@
+# 数据集（太大，不提交）
+data/IDC_regular_ps50_idx5/
+
+# Python 缓存
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# 运行时输出（模型文件、图表、结果 CSV）
+outputs/
+
+# 日志
+*.log
+
+# Word 临时文件
+~$*.docx
