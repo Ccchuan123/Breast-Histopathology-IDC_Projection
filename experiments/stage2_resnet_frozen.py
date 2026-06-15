@@ -3,7 +3,7 @@
 阶段二：ResNet18 冻结骨干 + FC 分类器 (Stage 2: Frozen Backbone)
 ==============================================================================
 
-本阶段复现了你搭档的基础方法：
+本阶段复现了搭档的基础方法：
     - 使用 ImageNet 预训练的 ResNet18 作为特征提取器
     - 冻结骨干网络（卷积层参数不更新）
     - 只训练最后加的一个全连接层 (512→2)
@@ -11,7 +11,8 @@
 
 为什么这样做？
     预训练的 ResNet18 已经学会了识别边缘、纹理等通用视觉特征。
-    我们只需要教会它"IDC 阳性和阴性的区别是什么"。冻结骨干的好处是：
+    我们只需要教会它"IDC 阳性和阴性的区别是什么" 
+    冻结骨干的好处是：
     1. 训练快（只更新几千个参数）
     2. 不容易过拟合
     3. CPU 也能跑
@@ -54,12 +55,8 @@ from src.visualization import (
 
 
 def main():
-    print("\n" + "=" * 60)
+    print("\n")
     print("  阶段二：ResNet18 冻结骨干 + FC 分类器")
-    print("=" * 60)
-
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"  设备: {device}")
 
     # ---- 1. 数据准备 ----
     print("\n 加载并划分数据...")
@@ -98,7 +95,7 @@ def main():
     classifier = classifier.to(device)
 
     total, trainable = count_parameters(classifier)
-    print(f"  分类器参数量: {total:,} (全部可训练，仅 1024 个参数！)")
+    print(f"  分类器参数量: {total:,} ")
 
     # 类别权重（处理不平衡）
     train_labels = feature_data["train"][1]
@@ -137,13 +134,9 @@ def main():
     plot_roc_curve(y_true, y_prob, model_name="ResNet18 Frozen")
 
     # ---- 6. 小结 ----
-    print("\n" + "=" * 60)
-    print("  阶段二完成！")
-    print("=" * 60)
-    print("ResNet18 冻结骨干训练了一个简单的 FC 分类器。")
+    print("\n")
+    print(" 阶段二完成")
     print(f"测试集 Accuracy: {metrics['accuracy']:.4f}")
-    print("接下来在阶段三，我们会尝试微调整个网络，看能否进一步提升。")
-    print("=" * 60)
 
 
 if __name__ == "__main__":
