@@ -181,9 +181,7 @@ def print_split_summary(df: pd.DataFrame) -> dict:
         info[f"{split_name}_images"] = len(split_df)
         info[f"{split_name}_patients"] = split_df["patient_id"].nunique()
 
-    print("=" * 60)
     print("数据集划分摘要")
-    print("=" * 60)
     print(f"总图像数:   {info['total_images']:,}")
     print(f"总病例数:   {info['total_patients']}")
     print(f"IDC 阴性:   {info['idc_negative']:,}  (class0)")
@@ -195,5 +193,5 @@ def print_split_summary(df: pd.DataFrame) -> dict:
     print(f"  测试集:   {info['test_images']:,} 张图像, "
           f"{info['test_patients']} 个病例")
     print(f"测试病例比例: {info['test_patients']/info['total_patients']:.2%}")
-    print("=" * 60)
+    print("\n")
     return info
