@@ -2,11 +2,11 @@
 
 ```
 Breast-Histopathology-IDC_Projection-main/
-├── README.md                           # 项目说明（你正在读的文件）
+├── README.md                           # 项目说明
 ├── requirements.txt                    # Python 依赖
-├── config.py                           # 统一配置（所有参数集中管理）
+├── config.py                           # 统一配置
 │
-├── src/                                # 核心代码（高内聚低耦合）
+├── src/                                # 核心代码
 │   ├── data_utils.py                   # 数据加载、划分、Dataset
 │   ├── feature_extraction.py           # ResNet18 特征提取
 │   ├── train_utils.py                  # 训练循环、评估、指标
@@ -21,8 +21,8 @@ Breast-Histopathology-IDC_Projection-main/
 │   ├── stage3_resnet_finetune.py       # 阶段三：ResNet18 全模型微调
 │   └── stage4_model_comparison.py      # 阶段四：模型对比与集成
 │
-├── notebooks/                          # Jupyter Notebook（原始版本保留）
-├── outputs/                            # 输出（模型、图表、结果）
+├── notebooks/                          # Jupyter Notebook
+├── outputs/                            # 输出
 │   ├── figures/                        # 所有可视化图表
 │   └── models/                         # 训练好的模型文件
 ├── data/                               # 数据集（需自行下载）
@@ -57,16 +57,16 @@ data/IDC_regular_ps50_idx5/
 ### 3. 按顺序运行实验
 
 ```bash
-# 阶段一：传统 ML 基线（先跑这个，建立性能基准）
+# 阶段一：传统 ML 基线（建立性能基准）
 python experiments/stage1_baseline_ml.py
 
-# 阶段二：ResNet18 冻结骨干（搭档的原始方法）
+# 阶段二：ResNet18 冻结骨干
 python experiments/stage2_resnet_frozen.py
 
-# 阶段三：ResNet18 微调（进一步提升）
+# 阶段三：ResNet18 微调
 python experiments/stage3_resnet_finetune.py
 
-# 阶段四：模型对比与集成（总结）
+# 阶段四：模型对比与集成
 python experiments/stage4_model_comparison.py
 ```
 
