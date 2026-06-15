@@ -21,12 +21,10 @@ Breast-Histopathology-IDC_Projection-main/
 │   ├── stage3_resnet_finetune.py       # 阶段三：ResNet18 全模型微调
 │   └── stage4_model_comparison.py      # 阶段四：模型对比与集成
 │
-├── notebooks/                          # Jupyter Notebook
 ├── outputs/                            # 输出
 │   ├── figures/                        # 所有可视化图表
 │   └── models/                         # 训练好的模型文件
-├── data/                               # 数据集（需自行下载）
-└── docs/                               # 文档
+└── data/                               # 数据集（需自行下载）
 ```
 
 ## 实验设计：四阶段渐进式
