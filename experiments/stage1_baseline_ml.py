@@ -46,9 +46,8 @@ from src.visualization import plot_confusion_matrix, plot_roc_curve
 
 
 def main():
-    print("\n" + "=" * 60)
+    print("\n")
     print("  阶段一：传统机器学习基线模型")
-    print("=" * 60)
 
     # ---- 1. 准备数据 ----
     print("\n 加载数据...")
@@ -57,11 +56,7 @@ def main():
     ))
     print_split_summary(df)
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"  设备: {device}")
-
     # ---- 2. 提取特征 ----
-    # 复用预训练 ResNet18 提取 512 维特征
     feature_extractor = get_feature_extractor(device)
 
     loaders = {}
@@ -88,15 +83,13 @@ def main():
     X_test_scaled = scaler.transform(X_test)
 
     # ---- 4. 训练三个基线模型 ----
-    print("\n 训练传统机器学习模型...")
-    print("-" * 50)
+    print("\n 训练传统机器学习模型")
 
     models = {}
     results = {}  # 格式: {模型名: (metrics, y_pred, y_prob)}
 
     # 4.1 逻辑回归
     print("\n1  逻辑回归 (Logistic Regression)")
-    print("   原理：学习特征和标签之间的线性关系，简单但有效")
     lr = train_ml_model(create_logistic_regression(), X_train_scaled, y_train)
     y_pred_lr, y_prob_lr = predict_ml_model(lr, X_test_scaled)
     metrics_lr = compute_metrics(y_test, y_pred_lr, y_prob_lr)
@@ -106,7 +99,6 @@ def main():
 
     # 4.2 随机森林
     print("\n2  随机森林 (Random Forest)")
-    print("   原理：集成多棵决策树投票，能捕捉非线性模式")
     rf = train_ml_model(create_random_forest(), X_train, y_train)
     y_pred_rf, y_prob_rf = predict_ml_model(rf, X_test)
     metrics_rf = compute_metrics(y_test, y_pred_rf, y_prob_rf)
@@ -116,7 +108,6 @@ def main():
 
     # 4.3 XGBoost
     print("\n3  XGBoost")
-    print("   原理：梯度提升树，逐步修正前一步的错误")
     xgb_model = create_xgboost()
     if xgb_model is not None:
         xgb_trained = train_ml_model(xgb_model, X_train, y_train, X_val, y_val)
@@ -137,13 +128,8 @@ def main():
             plot_roc_curve(y_test, y_prob_model, model_name=name)
 
     # ---- 6. 阶段小结 ----
-    print("\n" + "=" * 60)
-    print("  阶段一完成！")
-    print("=" * 60)
-    print("现在你已经有了三个传统 ML 的基线结果。")
+    print(" 阶段一完成")
     print("接下来在阶段二，我们会用深度学习方法来尝试超越这些基线。")
-    print("=" * 60)
-
 
 if __name__ == "__main__":
     main()
