@@ -29,3 +29,11 @@ outputs/figures/*
 !outputs/figures/training_curve_stage2.png
 !outputs/figures/training_curve_stage3.png
 !outputs/figures/model_comparison.png
+
+# Large local/cloud files
+data.zip
+formal_experiment_results.zip
+outputs/models/
+outputs/logs/
+*.pth
+*.pkl
