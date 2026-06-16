@@ -1,4 +1,8 @@
-"""Stage 4: model comparison and simple ensembles."""
+"""Stage 4：模型比较、简单集成和可视化。
+
+本阶段加载 Stage1、Stage2、Stage3 已保存的模型和 scaler，在同一测试集上计算指标，
+生成混淆矩阵、ROC/PR 曲线、模型对比图，并进行 hard voting 与 soft voting 集成。
+"""
 
 import sys
 from collections import Counter
@@ -63,6 +67,7 @@ def ensemble_average(probabilities: list[np.ndarray]) -> tuple[np.ndarray, np.nd
 
 
 def validate_stage4_artifacts():
+    """检查 Stage4 必需的模型文件和 scaler 是否存在。"""
     required = {
         "Stage1 ML models": (BEST_ML_MODELS, "Run experiments/stage1_baseline_ml.py first."),
         "Stage1 scaler": (STAGE1_SCALER, "Run experiments/stage1_baseline_ml.py first."),
@@ -83,10 +88,12 @@ def main():
     print_experiment_config("Stage 4: Model comparison and ensemble", device)
     validate_stage4_artifacts()
 
+    # 加载与当前 DEBUG/FULL 模式一致的固定 split，并只取测试集进行公平比较。
     df = load_experiment_split()
     print_split_summary(df)
     test_df = df[df["split"] == "test"].reset_index(drop=True)
 
+    # 为传统 ML 和 Stage2 提取测试集 ResNet18 特征。
     feature_extractor = get_feature_extractor(device)
     test_image_loader = make_data_loader(test_df, shuffle=False)
     X_test, y_test = extract_features(feature_extractor, test_image_loader, device, desc="Extract test features")
@@ -98,10 +105,12 @@ def main():
     model_names: list[str] = []
     curve_data: dict[str, tuple[np.ndarray, np.ndarray]] = {}
 
+    # 加载 Stage1 的传统 ML 模型和训练集 fit 得到的 scaler。
     ml_models = load_ml_models()
     scaler = load_scaler()
     X_test_scaled = scaler.transform(X_test_np)
 
+    # 评估传统 ML 模型，所有模型使用同一个测试集。
     for name in ["Logistic Regression", "Random Forest", "XGBoost"]:
         if name in ml_models and ml_models[name] is not None:
             features = X_test_scaled if name == "Logistic Regression" else X_test_np
@@ -115,6 +124,7 @@ def main():
             model_names.append(name)
             curve_data[name] = (y_test_np, y_prob)
 
+    # 加载并评估 Stage2 冻结骨干模型。
     stage2_model = load_stage2_model(device)
     test_feat_loader = make_feature_loader(X_test, y_test, shuffle=False)
     y_true, y_pred, y_prob = predict_model(stage2_model, test_feat_loader, device)
@@ -127,6 +137,7 @@ def main():
     model_names.append("ResNet18 Frozen")
     curve_data["ResNet18 Frozen"] = (y_true, y_prob)
 
+    # 加载并评估 Stage3 微调模型。
     stage3_model = load_stage3_model(device)
     test_image_loader_eval = make_data_loader(test_df, shuffle=False)
     y_true, y_pred, y_prob = predict_model(stage3_model, test_image_loader_eval, device)
@@ -142,6 +153,7 @@ def main():
     if not all_predictions:
         raise RuntimeError("No trained models were available for Stage 4.")
 
+    # 基于所有可用模型进行 hard voting 和 soft voting 集成。
     ensemble_pred = ensemble_vote(all_predictions)
     metrics_vote = compute_metrics(y_test_np, ensemble_pred)
     print_metrics(metrics_vote, f"Ensemble Hard Voting ({', '.join(model_names)})")
@@ -155,6 +167,7 @@ def main():
     plot_confusion_matrix(y_test_np, ensemble_pred_soft, title="Ensemble Soft Voting")
     curve_data["Ensemble Soft Voting"] = (y_test_np, ensemble_prob)
 
+    # 保存综合 ROC/PR 曲线、错误样本图和模型对比图。
     plot_combined_roc_curves(curve_data)
     plot_combined_pr_curves(curve_data)
     plot_error_samples(test_df, y_test_np, ensemble_pred_soft)

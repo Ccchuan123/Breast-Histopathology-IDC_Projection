@@ -1,4 +1,8 @@
-"""Stage 1: traditional machine-learning baselines."""
+"""Stage 1：传统机器学习基线模型。
+
+本阶段先使用预训练 ResNet18 提取 512 维特征，再训练 Logistic Regression、
+Random Forest 和 XGBoost。它为后续深度学习模型提供 baseline 对照。
+"""
 
 import sys
 from pathlib import Path
@@ -28,9 +32,11 @@ def main():
     device = get_device()
     print_experiment_config("Stage 1: Traditional ML baselines", device)
 
+    # 加载固定 patient-level split，确保四个阶段使用同一训练/验证/测试划分。
     df = load_experiment_split()
     print_split_summary(df)
 
+    # 构建 ResNet18 特征提取器，并为 train / val / test 构建 DataLoader。
     feature_extractor = get_feature_extractor(device)
     loaders = {
         split: make_data_loader(df[df["split"] == split], shuffle=False)
@@ -46,6 +52,7 @@ def main():
     X_val, y_val = feature_data["val"]
     X_test, y_test = feature_data["test"]
 
+    # StandardScaler 只能在训练集 fit，验证集和测试集只 transform，避免数据泄漏。
     scaler = StandardScaler()
     X_train_scaled = scaler.fit_transform(X_train)
     X_val_scaled = scaler.transform(X_val)
@@ -55,6 +62,7 @@ def main():
     models = {}
     results = {}
 
+    # 训练三个传统机器学习 baseline，并在同一测试集上计算指标。
     lr = train_ml_model(create_logistic_regression(), X_train_scaled, y_train)
     y_pred, y_prob = predict_ml_model(lr, X_test_scaled)
     metrics = compute_metrics(y_test, y_pred, y_prob)
@@ -80,6 +88,7 @@ def main():
 
     save_ml_models(models)
 
+    # 保存指标、混淆矩阵和单模型 ROC 曲线。
     for name, (metrics, y_pred, y_prob) in results.items():
         save_model_results(name, metrics)
         plot_confusion_matrix(y_test, y_pred, title=name)

@@ -1,4 +1,9 @@
-"""Training, prediction, metrics, and result-summary utilities."""
+"""训练、预测、评价指标与结果汇总工具。
+
+医学图像任务通常存在类别不平衡，不能只看 accuracy。
+本模块统一计算 accuracy、precision、recall/sensitivity、specificity、F1、
+ROC-AUC、PR-AUC 和 balanced accuracy，并保存到 results_summary.csv。
+"""
 
 import numpy as np
 import pandas as pd
@@ -19,6 +24,18 @@ from tqdm import tqdm
 
 
 def compute_metrics(y_true: np.ndarray, y_pred: np.ndarray, y_prob: np.ndarray | None = None) -> dict:
+    """计算二分类医学图像任务常用指标。
+
+    指标含义：
+    - accuracy：总体预测正确比例，但类别不平衡时可能过于乐观。
+    - precision：预测为阳性的样本中，真实阳性的比例。
+    - recall / sensitivity：真实阳性样本中被识别出来的比例，也称敏感性。
+    - specificity：真实阴性样本中被正确识别为阴性的比例，也称特异性。
+    - F1：precision 和 recall 的调和平均。
+    - ROC-AUC：不同阈值下 TPR/FPR 的整体表现。
+    - PR-AUC：precision-recall 曲线面积，类别不平衡时尤其有参考价值。
+    - balanced accuracy：正负类别召回率的平均，减轻类别不平衡影响。
+    """
     cm = confusion_matrix(y_true, y_pred, labels=[0, 1])
     tn, fp, fn, tp = cm.ravel()
     specificity = tn / (tn + fp) if (tn + fp) else 0.0
@@ -43,6 +60,7 @@ def compute_metrics(y_true: np.ndarray, y_pred: np.ndarray, y_prob: np.ndarray |
 
 
 def print_metrics(metrics: dict, title: str = "Evaluation Metrics"):
+    """以统一格式打印评价指标和混淆矩阵。"""
     print(f"\n{'=' * 58}")
     print(f"  {title}")
     print(f"{'=' * 58}")
@@ -64,6 +82,7 @@ def print_metrics(metrics: dict, title: str = "Evaluation Metrics"):
 
 
 def train_one_epoch(model: nn.Module, loader: DataLoader, criterion, optimizer, device) -> tuple[float, float]:
+    """训练完整图像模型一个 epoch，返回平均 loss 和 accuracy。"""
     model.train()
     total_loss, correct, total = 0.0, 0, 0
     for images, labels in tqdm(loader, desc="Training", leave=False):
@@ -81,6 +100,7 @@ def train_one_epoch(model: nn.Module, loader: DataLoader, criterion, optimizer, 
 
 @torch.no_grad()
 def evaluate_model(model: nn.Module, loader: DataLoader, criterion, device) -> tuple[float, float]:
+    """在验证集或测试集上评估完整图像模型。"""
     model.eval()
     total_loss, correct, total = 0.0, 0, 0
     for images, labels in tqdm(loader, desc="Evaluating", leave=False):
@@ -95,6 +115,7 @@ def evaluate_model(model: nn.Module, loader: DataLoader, criterion, device) -> t
 
 @torch.no_grad()
 def predict_model(model: nn.Module, loader: DataLoader, device) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """输出真实标签、预测标签和阳性类别概率。"""
     model.eval()
     labels_all, preds_all, probs_all = [], [], []
     for images, labels in tqdm(loader, desc="Predicting", leave=False):
@@ -117,6 +138,11 @@ def train_classifier_on_features(
     num_epochs: int = 10,
     save_path=None,
 ) -> dict:
+    """在预提取 ResNet18 特征上训练 Stage2 的线性分类头。
+
+    Stage2 的骨干网络已冻结，因此这里的输入是 512 维特征向量，
+    只更新最后的线性分类器参数。
+    """
     history = {"epoch": [], "train_loss": [], "train_acc": [], "val_loss": [], "val_acc": []}
     best_val_acc = -1.0
     best_state = None
@@ -175,6 +201,11 @@ def train_classifier_on_features(
 
 
 def save_model_results(model_name: str, metrics: dict):
+    """将单个模型的指标写入 results_summary.csv。
+
+    如果同名模型已经存在，则先删除旧记录再写入新记录，避免重复行。
+    四个 stage 共享这个结果文件，便于 Stage4 汇总和绘图。
+    """
     row = {
         "model": model_name,
         "accuracy": metrics["accuracy"],

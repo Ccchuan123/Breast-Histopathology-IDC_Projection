@@ -1,4 +1,8 @@
-"""Data collection, fixed patient-level split, and PyTorch datasets."""
+"""数据收集、patient-level split 与 PyTorch Dataset 工具。
+
+本模块负责把原始病理图像整理成 DataFrame，并保证同一 patient_id 的图像只会出现在
+train / val / test 中的一个集合里。这样可以避免同一病人图像泄漏到测试集，导致模型性能虚高。
+"""
 
 import re
 from pathlib import Path
@@ -25,6 +29,12 @@ from config import (
 
 
 def extract_label_from_filename(image_path: Path) -> int:
+    """从文件名中提取二分类标签。
+
+    数据集文件名通常包含 class0 或 class1：
+    - class0：IDC 阴性
+    - class1：IDC 阳性
+    """
     match = re.search(r"class([01])", image_path.stem, flags=re.IGNORECASE)
     if match is None:
         raise ValueError(f"Cannot extract class label from filename: {image_path.name}")
@@ -32,6 +42,11 @@ def extract_label_from_filename(image_path: Path) -> int:
 
 
 def collect_samples(data_dir: Path = DATA_DIR) -> pd.DataFrame:
+    """遍历数据目录，收集所有 PNG 图像及其 patient_id、label。
+
+    patient_id 从路径层级中提取，label 从文件名的 class0/class1 中提取。
+    返回的 DataFrame 是后续 patient-level split 和 Dataset 构建的统一入口。
+    """
     image_paths = sorted(data_dir.rglob("*.png"))
     if not image_paths:
         raise ValueError(f"No PNG images found in {data_dir}")
@@ -39,6 +54,7 @@ def collect_samples(data_dir: Path = DATA_DIR) -> pd.DataFrame:
     rows = []
     for image_path in image_paths:
         label = extract_label_from_filename(image_path)
+        # 如果文件夹名本身也是 0/1，则额外检查文件夹标签和文件名标签是否一致。
         if image_path.parent.name in {"0", "1"} and int(image_path.parent.name) != label:
             raise ValueError(f"Folder label and filename label mismatch: {image_path}")
         rows.append(
@@ -60,6 +76,12 @@ def patient_level_split(
     test_ratio: float = TEST_PATIENT_RATIO,
     val_ratio: float = VAL_PATIENT_RATIO,
 ) -> pd.DataFrame:
+    """按 patient_id 划分 train / val / test。
+
+    医学图像中同一病人的多个 patch 往往高度相关。如果随机按图片划分，
+    同一病人的图像可能同时出现在训练集和测试集，造成数据泄漏。
+    因此这里先按 patient_id 划分，再把 split 标签映射回每一张图像。
+    """
     patients = np.array(sorted(df["patient_id"].unique()))
     train_val_patients, test_patients = train_test_split(
         patients, test_size=test_ratio, random_state=SEED
@@ -90,6 +112,11 @@ def patient_level_split(
 
 
 def _apply_debug_sample(df: pd.DataFrame) -> pd.DataFrame:
+    """DEBUG 模式下的小样本抽样。
+
+    只在 DEBUG_MODE=True 时生效。每个类别最多保留 SAMPLE_PER_CLASS 张图像，
+    用于快速检查代码流程、输出文件和图表是否正常生成。
+    """
     if not DEBUG_MODE:
         return df
     sampled = (
@@ -106,6 +133,12 @@ def _apply_debug_sample(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def load_or_create_patient_split(data_dir: Path = DATA_DIR) -> pd.DataFrame:
+    """读取或生成当前模式对应的固定 patient-level split。
+
+    DEBUG_MODE=True 时使用 split_patient_level_debug.csv；
+    DEBUG_MODE=False 时使用 split_patient_level_full.csv。
+    二者分开保存，避免先跑 DEBUG 后正式训练误用小样本 split。
+    """
     if SPLIT_CSV.exists():
         df = pd.read_csv(SPLIT_CSV)
         print(f"[OK] Loaded fixed patient-level split: {SPLIT_CSV}")
@@ -123,6 +156,10 @@ def load_or_create_patient_split(data_dir: Path = DATA_DIR) -> pd.DataFrame:
 
 
 class IDCDataset(Dataset):
+    """IDC 图像数据集适配器。
+
+    从 DataFrame 中读取图像路径和标签，加载图像并应用 torchvision transform。
+    """
     def __init__(self, dataframe: pd.DataFrame, transform=None):
         self.dataframe = dataframe.reset_index(drop=True)
         self.transform = transform
@@ -140,6 +177,11 @@ class IDCDataset(Dataset):
 
 
 def get_image_transform(augment: bool = False) -> transforms.Compose:
+    """构建图像预处理流程。
+
+    验证/测试只做 resize、ToTensor 和 ImageNet normalization；
+    训练时可额外加入轻量数据增强。
+    """
     ops = [transforms.Resize((IMG_SIZE, IMG_SIZE))]
     if augment:
         ops.extend(
@@ -159,6 +201,7 @@ def get_image_transform(augment: bool = False) -> transforms.Compose:
 
 
 def make_data_loader(dataframe: pd.DataFrame, shuffle: bool = False, augment: bool = False) -> DataLoader:
+    """根据 DataFrame 构建 PyTorch DataLoader。"""
     return DataLoader(
         IDCDataset(dataframe, get_image_transform(augment=augment)),
         batch_size=BATCH_SIZE,
@@ -169,6 +212,7 @@ def make_data_loader(dataframe: pd.DataFrame, shuffle: bool = False, augment: bo
 
 
 def print_split_summary(df: pd.DataFrame) -> dict:
+    """打印当前 split 的图像数量、病人数和类别分布。"""
     info = {
         "total_images": len(df),
         "total_patients": df["patient_id"].nunique(),

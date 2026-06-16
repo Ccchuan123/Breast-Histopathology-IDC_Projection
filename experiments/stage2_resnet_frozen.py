@@ -1,4 +1,8 @@
-"""Stage 2: ResNet18 frozen backbone features plus trainable FC classifier."""
+"""Stage 2：冻结 ResNet18 主干，只训练分类头。
+
+本阶段使用预训练 ResNet18 作为固定特征提取器，先提取图像特征，
+再训练一个线性分类头。相比端到端训练，它更快，适合 CPU 或 DEBUG 测试。
+"""
 
 import sys
 from pathlib import Path
@@ -30,10 +34,12 @@ def main():
     device = get_device()
     print_experiment_config("Stage 2: ResNet18 frozen backbone", device)
 
+    # 加载固定 split，并绘制类别分布，检查 train / val / test 是否一致可比。
     df = load_experiment_split()
     print_split_summary(df)
     plot_class_distribution(df)
 
+    # 冻结骨干的思路：先提取 ResNet18 特征，再训练轻量分类器。
     feature_extractor = get_feature_extractor(device)
     loaders = {
         split: make_data_loader(df[df["split"] == split], shuffle=False)
@@ -51,6 +57,7 @@ def main():
     total, trainable = count_parameters(classifier)
     print(f"Classifier parameters: {total:,}; trainable: {trainable:,}")
 
+    # 根据训练集类别比例构造 class-weighted CrossEntropyLoss。
     train_labels = feature_data["train"][1]
     class_counts = train_labels.bincount(minlength=2).float().clamp_min(1)
     class_weights = (len(train_labels) / (2 * class_counts)).to(device)
@@ -59,6 +66,7 @@ def main():
     criterion = nn.CrossEntropyLoss(weight=class_weights)
     optimizer = optim.AdamW(classifier.parameters(), lr=LEARNING_RATE_FC, weight_decay=WEIGHT_DECAY)
 
+    # 训练分类头，并保存验证集表现最好的权重。
     history = train_classifier_on_features(
         classifier,
         train_feat_loader,
@@ -70,6 +78,7 @@ def main():
         save_path=BEST_MODEL_STAGE2,
     )
 
+    # 保存训练曲线和测试集评估图表。
     pd.DataFrame(history).to_csv(HISTORY_STAGE2_CSV, index=False)
     plot_training_curves(history, stage_name="Stage2", output_name="training_curve_stage2.png")
 

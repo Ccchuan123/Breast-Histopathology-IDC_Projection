@@ -1,4 +1,8 @@
-"""Visualization helpers for figures and error-analysis samples."""
+"""可视化工具函数。
+
+本模块负责保存混淆矩阵、ROC 曲线、PR 曲线、训练曲线、模型对比图，
+以及 false positive / false negative 错误样本图。
+"""
 
 import re
 from pathlib import Path
@@ -24,6 +28,7 @@ def _safe_name(name: str) -> str:
 
 
 def plot_class_distribution(df: pd.DataFrame, save: bool = True):
+    """绘制 train / val / test 中 class0 和 class1 的数量分布。"""
     plt.figure(figsize=(8, 5))
     sns.countplot(data=df, x="split", hue="label", order=["train", "val", "test"])
     plt.title("Class Distribution by Dataset Split", fontsize=14, fontweight="bold")
@@ -39,6 +44,10 @@ def plot_class_distribution(df: pd.DataFrame, save: bool = True):
 
 
 def plot_training_curves(history: dict, stage_name: str = "", save: bool = True, output_name: str | None = None):
+    """绘制训练曲线。
+
+    左图为 loss 曲线，右图为 accuracy 曲线，用于观察是否收敛或过拟合。
+    """
     epochs = history["epoch"]
     fig, axes = plt.subplots(1, 2, figsize=(12, 4))
     axes[0].plot(epochs, history["train_loss"], label="Train", linewidth=2)
@@ -66,6 +75,10 @@ def plot_training_curves(history: dict, stage_name: str = "", save: bool = True,
 
 
 def plot_confusion_matrix(y_true: np.ndarray, y_pred: np.ndarray, title: str = "Confusion Matrix", save: bool = True):
+    """绘制混淆矩阵。
+
+    混淆矩阵展示 TN、FP、FN、TP。医学任务中 FN（漏检阳性）通常需要重点关注。
+    """
     cm = confusion_matrix(y_true, y_pred, labels=[0, 1])
     plt.figure(figsize=(5, 4.5))
     sns.heatmap(
@@ -87,6 +100,10 @@ def plot_confusion_matrix(y_true: np.ndarray, y_pred: np.ndarray, title: str = "
 
 
 def plot_roc_curve(y_true: np.ndarray, y_prob: np.ndarray, model_name: str = "", save: bool = True):
+    """绘制单个模型的 ROC 曲线。
+
+    ROC 曲线反映不同阈值下 sensitivity 和 false positive rate 的权衡。
+    """
     fpr, tpr, _ = roc_curve(y_true, y_prob)
     roc_auc = auc(fpr, tpr)
     plt.figure(figsize=(5, 4.5))
@@ -106,6 +123,7 @@ def plot_roc_curve(y_true: np.ndarray, y_prob: np.ndarray, model_name: str = "",
 
 
 def plot_combined_roc_curves(curve_data: dict[str, tuple[np.ndarray, np.ndarray]]):
+    """绘制多个模型的 ROC 曲线到同一张图，便于横向比较。"""
     plt.figure(figsize=(7, 6))
     for name, (y_true, y_prob) in curve_data.items():
         fpr, tpr, _ = roc_curve(y_true, y_prob)
@@ -123,6 +141,10 @@ def plot_combined_roc_curves(curve_data: dict[str, tuple[np.ndarray, np.ndarray]
 
 
 def plot_combined_pr_curves(curve_data: dict[str, tuple[np.ndarray, np.ndarray]]):
+    """绘制多个模型的 PR 曲线。
+
+    PR 曲线展示 precision 和 recall 的关系，在阳性样本较少时比 ROC 更敏感。
+    """
     plt.figure(figsize=(7, 6))
     for name, (y_true, y_prob) in curve_data.items():
         precision, recall, _ = precision_recall_curve(y_true, y_prob)
@@ -139,6 +161,7 @@ def plot_combined_pr_curves(curve_data: dict[str, tuple[np.ndarray, np.ndarray]]
 
 
 def plot_model_comparison(results_df: pd.DataFrame, save: bool = True):
+    """根据 results_summary.csv 绘制不同模型的指标对比柱状图。"""
     metrics = ["accuracy", "precision", "recall", "specificity", "f1_score", "roc_auc", "pr_auc", "balanced_accuracy"]
     available = [m for m in metrics if m in results_df.columns]
     fig, ax = plt.subplots(figsize=(13, 6))
@@ -164,6 +187,11 @@ def plot_model_comparison(results_df: pd.DataFrame, save: bool = True):
 
 
 def plot_error_samples(test_df: pd.DataFrame, y_true: np.ndarray, y_pred: np.ndarray, max_images: int = 16):
+    """保存 false positive 和 false negative 图像网格。
+
+    false positive：真实阴性但预测为阳性。
+    false negative：真实阳性但预测为阴性，是医学筛查任务中尤其需要关注的错误类型。
+    """
     def _grid(indices: np.ndarray, path: Path, title: str):
         n = min(len(indices), max_images)
         if n == 0:
