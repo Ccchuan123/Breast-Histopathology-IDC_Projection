@@ -1,16 +1,31 @@
-# 数据集（太大，不提交）
-data/IDC_regular_ps50_idx5/
+# Dataset
+data/
 
-# Python 缓存
+# Python cache
 __pycache__/
 *.pyc
 .ipynb_checkpoints/
 
-# 运行时输出（模型文件、图表、结果 CSV）
-outputs/
-
-# 日志
+# Logs and temporary files
 *.log
-
-# Word 临时文件
 ~$*.docx
+
+# Large generated artifacts
+outputs/models/
+outputs/*.pt
+outputs/*.pth
+*.pth
+*.pkl
+outputs/**/*.pkl
+
+# Ignore generated outputs by default, then keep compact summary/core figures.
+outputs/*
+!outputs/results_summary.csv
+!outputs/figures/
+outputs/figures/*
+!outputs/figures/confusion_matrix_*.png
+!outputs/figures/roc_curves.png
+!outputs/figures/pr_curves.png
+!outputs/figures/training_curve_stage2.png
+!outputs/figures/training_curve_stage3.png
+!outputs/figures/model_comparison.png
