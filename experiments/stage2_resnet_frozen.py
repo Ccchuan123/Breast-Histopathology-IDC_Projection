@@ -21,12 +21,12 @@ from config import (
     NUM_EPOCHS_FROZEN,
     WEIGHT_DECAY,
 )
-from src.data_utils import make_data_loader, print_split_summary
-from src.experiment_utils import ensure_output_dirs, get_device, load_experiment_split, print_experiment_config
-from src.feature_extraction import extract_features, get_feature_extractor, make_feature_loader
-from src.models.deep_models import count_parameters, create_feature_classifier
-from src.train_utils import compute_metrics, predict_model, print_metrics, save_model_results, train_classifier_on_features
-from src.visualization import plot_class_distribution, plot_confusion_matrix, plot_roc_curve, plot_training_curves
+from tool.data_utils import make_data_loader, print_split_summary
+from tool.experiment_utils import ensure_output_dirs, get_device, load_experiment_split, print_experiment_config
+from tool.feature_extraction import get_feature_extractor, load_or_extract_features, make_feature_loader
+from tool.models.deep_models import count_parameters, create_feature_classifier
+from tool.train_utils import compute_metrics, predict_model, print_metrics, save_model_results, train_classifier_on_features
+from tool.visualization import plot_class_distribution, plot_confusion_matrix, plot_roc_curve, plot_training_curves
 
 
 def main():
@@ -45,9 +45,7 @@ def main():
         split: make_data_loader(df[df["split"] == split], shuffle=False)
         for split in ["train", "val", "test"]
     }
-    feature_data = {}
-    for split, loader in loaders.items():
-        feature_data[split] = extract_features(feature_extractor, loader, device, desc=f"Extract {split}")
+    feature_data = load_or_extract_features(feature_extractor, loaders, device)
 
     train_feat_loader = make_feature_loader(*feature_data["train"], shuffle=True)
     val_feat_loader = make_feature_loader(*feature_data["val"], shuffle=False)
