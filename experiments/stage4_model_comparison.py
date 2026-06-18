@@ -15,13 +15,13 @@ import pandas as pd
 import torch
 
 from config import BEST_ML_MODELS, BEST_MODEL_STAGE2, BEST_MODEL_STAGE3, FEATURE_DIM, RESULTS_CSV, STAGE1_SCALER
-from src.data_utils import make_data_loader, print_split_summary
-from src.experiment_utils import ensure_output_dirs, get_device, load_experiment_split, print_experiment_config
-from src.feature_extraction import extract_features, get_feature_extractor, make_feature_loader
-from src.models.baseline_ml import load_ml_models, load_scaler, predict_ml_model
-from src.models.deep_models import create_feature_classifier, create_resnet18_full
-from src.train_utils import compute_metrics, predict_model, print_metrics, save_model_results
-from src.visualization import (
+from tool.data_utils import make_data_loader, print_split_summary
+from tool.experiment_utils import ensure_output_dirs, get_device, load_experiment_split, print_experiment_config
+from tool.feature_extraction import extract_features, get_feature_extractor, make_feature_loader
+from tool.models.baseline_ml import load_ml_models, load_scaler, predict_ml_model
+from tool.models.deep_models import create_feature_classifier, create_resnet18_full
+from tool.train_utils import compute_metrics, predict_model, print_metrics, save_model_results
+from tool.visualization import (
     plot_combined_pr_curves,
     plot_combined_roc_curves,
     plot_confusion_matrix,
@@ -66,8 +66,12 @@ def ensemble_average(probabilities: list[np.ndarray]) -> tuple[np.ndarray, np.nd
     return (avg_prob > 0.5).astype(int), avg_prob
 
 
-def validate_stage4_artifacts():
-    """检查 Stage4 必需的模型文件和 scaler 是否存在。"""
+
+
+
+
+""" 这段我在思考要不要，因为我们已经写了runall.bat 我感觉检查前面是否运行过的代码有没有必要 """
+def validate_stage4_artifacts():    
     required = {
         "Stage1 ML models": (BEST_ML_MODELS, "Run experiments/stage1_baseline_ml.py first."),
         "Stage1 scaler": (STAGE1_SCALER, "Run experiments/stage1_baseline_ml.py first."),
@@ -80,6 +84,10 @@ def validate_stage4_artifacts():
             "Stage 4 requires trained artifacts from Stage 1, Stage 2, and Stage 3.\n"
             + "\n".join(missing)
         )
+
+
+
+
 
 
 def main():
