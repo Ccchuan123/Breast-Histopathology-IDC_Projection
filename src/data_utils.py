@@ -213,23 +213,14 @@ def make_data_loader(dataframe: pd.DataFrame, shuffle: bool = False, augment: bo
 
 def print_split_summary(df: pd.DataFrame) -> dict:
     """打印当前 split 的图像数量、病人数和类别分布。"""
-    info = {
-        "total_images": len(df),
-        "total_patients": df["patient_id"].nunique(),
-        "idc_negative": int((df["label"] == 0).sum()),
-        "idc_positive": int((df["label"] == 1).sum()),
-    }
     print("\nDataset split summary")
-    print(f"Total images:   {info['total_images']:,}")
-    print(f"Total patients: {info['total_patients']:,}")
-    print(f"IDC negative:   {info['idc_negative']:,}")
-    print(f"IDC positive:   {info['idc_positive']:,}")
+    print(f"Total images:   {len(df):,}")
+    print(f"Total patients: {df['patient_id'].nunique():,}")
+    print(f"IDC negative:   {(df['label'] == 0).sum():,}")
+    print(f"IDC positive:   {(df['label'] == 1).sum():,}")
     for split_name in ["train", "val", "test"]:
         split_df = df[df["split"] == split_name]
-        info[f"{split_name}_images"] = len(split_df)
-        info[f"{split_name}_patients"] = split_df["patient_id"].nunique()
         print(
             f"{split_name:>5}: {len(split_df):,} images, "
             f"{split_df['patient_id'].nunique():,} patients"
         )
-    return info
