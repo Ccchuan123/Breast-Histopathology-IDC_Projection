@@ -15,7 +15,7 @@ from config import (
     SAMPLE_PER_CLASS,
     SPLIT_CSV,
 )
-from src.data_utils import load_or_create_patient_split
+from tool.data_utils import load_or_create_patient_split
 
 
 def get_device() -> torch.device:
@@ -46,13 +46,11 @@ def print_experiment_config(stage_name: str, device: torch.device):
     这样运行日志中能清楚看到当前 stage、DEBUG/FULL 模式、split 文件、device 和输出目录。
     """
     mode = "DEBUG" if DEBUG_MODE else "FULL"
-    print("\n" + "=" * 72)
+    print("\n")
     print(stage_name)
-    print("=" * 72)
     print(f"Mode:       {mode}")
     if DEBUG_MODE:
         print(f"Sample cap: {SAMPLE_PER_CLASS} images per class")
     print(f"Split file: {SPLIT_CSV}")
     print(f"Device:     {device}")
     print(f"Output dir: {OUTPUT_DIR}")
-    print("=" * 72)
