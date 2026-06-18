@@ -11,10 +11,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from sklearn.preprocessing import StandardScaler
 
-from src.data_utils import make_data_loader, print_split_summary
-from src.experiment_utils import ensure_output_dirs, get_device, load_experiment_split, print_experiment_config
-from src.feature_extraction import extract_features, get_feature_extractor
-from src.models.baseline_ml import (
+from tool.data_utils import make_data_loader, print_split_summary
+from tool.experiment_utils import ensure_output_dirs, get_device, load_experiment_split, print_experiment_config
+from tool.feature_extraction import get_feature_extractor, load_or_extract_features
+from tool.models.baseline_ml import (
     create_logistic_regression,
     create_random_forest,
     create_xgboost,
@@ -23,8 +23,8 @@ from src.models.baseline_ml import (
     save_scaler,
     train_ml_model,
 )
-from src.train_utils import compute_metrics, print_metrics, save_model_results
-from src.visualization import plot_confusion_matrix, plot_roc_curve
+from tool.train_utils import compute_metrics, print_metrics, save_model_results
+from tool.visualization import plot_confusion_matrix, plot_roc_curve
 
 
 def main():
@@ -43,14 +43,10 @@ def main():
         for split in ["train", "val", "test"]
     }
 
-    feature_data = {}
-    for split, loader in loaders.items():
-        x, y = extract_features(feature_extractor, loader, device, desc=f"Feature {split}")
-        feature_data[split] = (x.numpy(), y.numpy())
-
-    X_train, y_train = feature_data["train"]
-    X_val, y_val = feature_data["val"]
-    X_test, y_test = feature_data["test"]
+    feature_data = load_or_extract_features(feature_extractor, loaders, device)
+    X_train, y_train = feature_data["train"][0].numpy(), feature_data["train"][1].numpy()
+    X_val, y_val = feature_data["val"][0].numpy(), feature_data["val"][1].numpy()
+    X_test, y_test = feature_data["test"][0].numpy(), feature_data["test"][1].numpy()
 
     # StandardScaler 只能在训练集 fit，验证集和测试集只 transform，避免数据泄漏。
     scaler = StandardScaler()
