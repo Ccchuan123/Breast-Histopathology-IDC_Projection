@@ -183,7 +183,7 @@ outputs/models/best_resnet18_finetune.pth
 
 可以提交：
 
-- `src/`
+- `tool/`
 - `experiments/`
 - `config.py`
 - `README.md`
