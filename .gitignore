@@ -1,0 +1,39 @@
+# Dataset
+data/
+
+# Python cache
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# Logs and temporary files
+*.log
+~$*.docx
+
+# Large generated artifacts
+outputs/models/
+outputs/*.pt
+outputs/*.pth
+*.pth
+*.pkl
+outputs/**/*.pkl
+
+# Ignore generated outputs by default, then keep compact summary/core figures.
+outputs/*
+!outputs/results_summary.csv
+!outputs/figures/
+outputs/figures/*
+!outputs/figures/confusion_matrix_*.png
+!outputs/figures/roc_curves.png
+!outputs/figures/pr_curves.png
+!outputs/figures/training_curve_stage2.png
+!outputs/figures/training_curve_stage3.png
+!outputs/figures/model_comparison.png
+
+# Large local/cloud files
+data.zip
+formal_experiment_results.zip
+outputs/models/
+outputs/logs/
+*.pth
+*.pkl
