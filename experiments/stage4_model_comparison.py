@@ -1,4 +1,4 @@
-"""Stage 4：模型比较、简单集成和可视化。
+﻿"""Stage 4：模型比较、简单集成和可视化。
 
 本阶段加载 Stage1、Stage2、Stage3 已保存的模型和 scaler，在同一测试集上计算指标，
 生成混淆矩阵、ROC/PR 曲线、模型对比图，并进行 hard voting 与 soft voting 集成。
@@ -66,12 +66,8 @@ def ensemble_average(probabilities: list[np.ndarray]) -> tuple[np.ndarray, np.nd
     return (avg_prob > 0.5).astype(int), avg_prob
 
 
-
-
-
-
-""" 这段我在思考要不要，因为我们已经写了runall.bat 我感觉检查前面是否运行过的代码有没有必要 """
-def validate_stage4_artifacts():    
+def validate_stage4_artifacts():
+    """Check whether all trained artifacts required by Stage 4 exist."""
     required = {
         "Stage1 ML models": (BEST_ML_MODELS, "Run experiments/stage1_baseline_ml.py first."),
         "Stage1 scaler": (STAGE1_SCALER, "Run experiments/stage1_baseline_ml.py first."),
