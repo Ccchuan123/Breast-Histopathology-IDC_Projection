@@ -37,3 +37,5 @@ outputs/models/
 outputs/logs/
 *.pth
 *.pkl
+!outputs/error_samples/
+!outputs/error_samples/*.png
